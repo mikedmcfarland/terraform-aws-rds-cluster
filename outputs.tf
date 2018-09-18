@@ -42,3 +42,8 @@ output "replicas_host" {
   value       = "${module.dns_replicas.hostname}"
   description = "Replicas hostname"
 }
+
+output "security_group" {
+  value       = "${join("", aws_security_group.default.*.id)}"
+  description = "The rds attached security group id"
+}

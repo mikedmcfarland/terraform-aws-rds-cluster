@@ -14,29 +14,37 @@ resource "aws_security_group" "default" {
   name        = "${module.label.id}"
   description = "Allow inbound traffic from Security Groups and CIDRs"
   vpc_id      = "${var.vpc_id}"
+  tags        = "${module.label.tags}"
+}
 
-  ingress {
-    from_port       = "${var.db_port}"
-    to_port         = "${var.db_port}"
-    protocol        = "tcp"
-    security_groups = ["${var.security_groups}"]
-  }
+resource "aws_security_group_rule" "sg_ingress" {
+  count                    = "${var.enabled == "true" ? length(var.security_groups) : 0}"
+  type                     = "ingress"
+  from_port                = "${var.db_port}"
+  to_port                  = "${var.db_port}"
+  protocol                 = "tcp"
+  source_security_group_id = "${element(var.security_groups, count.index)}"
+  security_group_id        = "${aws_security_group.default.id}"
+}
 
-  ingress {
-    from_port   = "${var.db_port}"
-    to_port     = "${var.db_port}"
-    protocol    = "tcp"
-    cidr_blocks = ["${var.allowed_cidr_blocks}"]
-  }
+resource "aws_security_group_rule" "cidr_ingress" {
+  count             = "${var.enabled == "true" ? signum(var.allowed_cidr_blocks) : 0}"
+  type              = "ingress"
+  from_port         = "${var.db_port}"
+  to_port           = "${var.db_port}"
+  protocol          = "tcp"
+  cidr_blocks       = "${var.allowed_cidr_blocks}"
+  security_group_id = "${aws_security_group.default.id}"
+}
 
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = "${module.label.tags}"
+resource "aws_security_group_rule" "egress" {
+  count             = "${var.enabled == "true" ? 1 : 0}"
+  type              = "egress"
+  from_port         = 0
+  to_port           = 0
+  protocol          = "-1"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = "${aws_security_group.default.id}"
 }
 
 resource "aws_rds_cluster" "default" {
