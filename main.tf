@@ -28,7 +28,7 @@ resource "aws_security_group_rule" "sg_ingress" {
 }
 
 resource "aws_security_group_rule" "cidr_ingress" {
-  count             = "${var.enabled == "true" ? signum(var.allowed_cidr_blocks) : 0}"
+  count             = "${var.enabled == "true" ? signum(length(var.allowed_cidr_blocks)) : 0}"
   type              = "ingress"
   from_port         = "${var.db_port}"
   to_port           = "${var.db_port}"
